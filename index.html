@@ -1511,7 +1511,7 @@ function initAlphaTab() {
   log('alphaTab OK, version '+(alphaTab.Environment?alphaTab.Environment.alphaTabVersion:'?'));
   try {
     AT = new alphaTab.AlphaTabApi($('alphaTab'), {
-      display: { layoutMode: alphaTab.LayoutMode.Horizontal, barsPerRow: 4 },
+      display: { layoutMode: (alphaTab.LayoutMode?alphaTab.LayoutMode.Horizontal:1), barsPerRow: 4 },
       player: {
         enablePlayer: true, enableCursor: true, soundFont: SONIVOX_URL,
         scrollMode: (alphaTab.ScrollMode?alphaTab.ScrollMode.Continuous:2),
@@ -1526,8 +1526,8 @@ function initAlphaTab() {
     e.target.value = '';
     log('Import SF2', file.name, file.size+'b');
     const r = new FileReader();
-    r.onload = ev => {
-      const buf = ev.target.result;
+    r.onload = function(ev) {
+      var buf = ev.target.result;
       customSFBuffer = buf;
       const tag=$('sfTag'), lab=$('sfBtnLabel');
       if (tag) { tag.textContent='SF OK'; tag.className='sf-tag ok'; }
@@ -1535,7 +1535,7 @@ function initAlphaTab() {
       if (!AT) { log('AT pas prêt, SF2 sera appliqué au prochain init'); return; }
       try { const ok=AT.loadSoundFont(buf); log('loadSoundFont buffer, ok?', ok); } catch(e2) { log('loadSoundFont ERR:',e2.message); }
     };
-    r.onerror = () => log('FileReader SF2 erreur');
+    r.onerror = function() { log('FileReader SF2 erreur'); };
     r.readAsArrayBuffer(file);
   });
 
