@@ -1366,8 +1366,8 @@ const fmt = ms => {
 };
 const esc = v => String(v).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;').replaceAll("'","&#39;");
 const ls = {
-  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k,v) { try { localStorage.setItem(k,v); } catch {} }
+  get(k) { try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v) { try { localStorage.setItem(k,v); } catch(e){} }
 };
 
 /* ══ FRETBOARD ══ */
@@ -1897,7 +1897,7 @@ function renderMarkers() {
   if (!markers.length) { c.innerHTML='<div class="empty">Aucun repere.</div>'; updateMetrics(); return; }
   c.innerHTML=markers.map((m,i)=>`<div class="mk-item" data-goto="${i}"><span class="mk-time">${fmt(m.time)}</span><span style="flex:1;font-size:var(--text-xs)">${esc(m.label)}</span><span class="mk-del" data-del="${i}">✕</span></div>`).join('');
   c.querySelectorAll('[data-del]').forEach(n=>n.addEventListener('click',e=>{e.stopPropagation();markers.splice(Number(n.dataset.del),1);saveLocal();renderMarkers();}));
-  c.querySelectorAll('[data-goto]').forEach(n=>n.addEventListener('click',()=>{const m=markers[Number(n.dataset.goto)];if(m&&AT) try{AT.playerPosition=m.time;}catch{}}));
+  c.querySelectorAll('[data-goto]').forEach(n=>n.addEventListener('click',()=>{const m=markers[Number(n.dataset.goto)];if(m&&AT) try{AT.playerPosition=m.time;}catch(e){}}));
   updateMetrics();
 }
 
@@ -1963,7 +1963,7 @@ function startCountdown(beats, bpm, onDone) {
     if (!cdActive) { cleanup(); return; }
     if (numEl) numEl.textContent=count;
     if (lblEl) lblEl.textContent=count===beats?'prêt…':'';
-    if (toneReady&&metronome) try{metronome.triggerAttackRelease(count===1?'C5':'C4','16n',Tone.now());}catch{}
+    if (toneReady&&metronome) try{metronome.triggerAttackRelease(count===1?'C5':'C4','16n',Tone.now());}catch(e){}
     if (count<=0) { cleanup(); onDone(); return; }
     count--;
     cdTimer=setTimeout(step,interval);
@@ -2131,25 +2131,25 @@ function bindUI() {
   $('timeline')&&$('timeline').addEventListener('input', e=>{
     if (!AT||!score) return;
     const s=Number(e.target.value||0);
-    try{AT.playerPosition=s*1000;}catch{}
+    try{AT.playerPosition=s*1000;}catch(e){}
     if ($('currentTime')) $('currentTime').textContent=fmt(s*1000);
   });
   $('tempoSlider')&&$('tempoSlider').addEventListener('input', e=>{
     const v=Number(e.target.value);
     if ($('tempoValue')) $('tempoValue').textContent=v+'%';
-    try{if(AT)AT.playbackSpeed=v/100;}catch{}
+    try{if(AT)AT.playbackSpeed=v/100;}catch(e){}
     updatePracticeUI();
   });
   $('volumeSlider')&&$('volumeSlider').addEventListener('input', e=>{
     const v=Number(e.target.value);
     if ($('volumeValue')) $('volumeValue').textContent=v+'%';
     if (metronome) metronome.volume.value=-24+(v/100)*24;
-    try{if(AT&&AT.masterVolume!==undefined)AT.masterVolume=v/100;}catch{}
+    try{if(AT&&AT.masterVolume!==undefined)AT.masterVolume=v/100;}catch(e){}
   });
   $('transposeSlider')&&$('transposeSlider').addEventListener('input', e=>{
     const v=Number(e.target.value);
     if ($('transposeValue')) $('transposeValue').textContent=v>0?'+'+v:String(v);
-    try{if(AT)AT.transpose=v;}catch{}
+    try{if(AT)AT.transpose=v;}catch(e){}
   });
   $('loopStartBtn')&&$('loopStartBtn').addEventListener('click', ()=>{
     loopStartTime=curMs();
