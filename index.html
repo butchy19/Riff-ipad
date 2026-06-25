@@ -1710,9 +1710,9 @@ function refreshLoopUI() {
 }
 
 /* ══ TONE METRONOME ══ */
-async function initTone() {
+function initTone() {
   if (toneReady||!window.Tone) return;
-  await Tone.start();
+  Tone.start();
   metronome = new Tone.MembraneSynth({ pitchDecay:.07, oscillator:{type:'sine'}, envelope:{attack:.001,decay:.22,sustain:0,release:.1} }).toDestination();
   metronome.volume.value = -6;
   toneReady=true; log('Tone prêt');
@@ -1726,8 +1726,8 @@ function setupMetronome() {
   let bc=0;
   metroEventId=Tone.Transport.scheduleRepeat(t => { metronome.triggerAttackRelease(bc%4===0?'C5':'C4','16n',t); bc++; }, sub);
 }
-async function toggleMetronome() {
-  try { await initTone(); } catch {}
+function toggleMetronome() {
+  try { initTone(); } catch(e) {}
   if (!window.Tone||!toneReady) return;
   metronomeActive=!metronomeActive;
   (function(){var _e=$('metronomeToggleBtn');if(_e)_e.classList.toggle('on',metronomeActive);})();
@@ -1907,18 +1907,17 @@ function renderRecordings() {
   if (!recordings.length) { c.innerHTML='<div class="empty">Tes prises ici.</div>'; return; }
   c.innerHTML=recordings.map(r=>`<div class="rec-item"><div style="font-size:var(--text-xs);color:var(--muted)">${esc(r.title)}</div><audio controls src="${r.url}"></audio></div>`).join('');
 }
-async function startRec() {
-  try {
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+function startRec() {
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
     mediaRecorder=new MediaRecorder(stream); audioChunks=[];
-    mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
-    mediaRecorder.onstop=()=>{
-      const blob=new Blob(audioChunks,{type:'audio/webm'});
-      recordings.unshift({url:URL.createObjectURL(blob),title:`Enreg ${new Date().toLocaleString()}`});
+    mediaRecorder.ondataavailable=function(e){audioChunks.push(e.data);};
+    mediaRecorder.onstop=function(){
+      var blob=new Blob(audioChunks,{type:'audio/webm'});
+      recordings.unshift({url:URL.createObjectURL(blob),title:'Enreg '+new Date().toLocaleString()});
       renderRecordings();
     };
     mediaRecorder.start(); isRecording=true; updateRecUI();
-  } catch(err) { alert(`Micro : ${err.message}`); }
+  }).catch(function(err){alert('Micro : '+err.message);});
 }
 function stopRec() {
   if (mediaRecorder&&isRecording) {
@@ -1958,7 +1957,7 @@ function startCountdown(beats, bpm, onDone) {
   (overlay&&overlay.classList.add('show'));
   let count=beats;
   const interval=Math.round(60000/bpm);
-  async function tick() { if (!toneReady&&window.Tone) try{await initTone();}catch{} }
+  function tick() { if (!toneReady&&window.Tone) { try{initTone();}catch(e){} } }
   function cleanup() { cdActive=false; (overlay&&overlay.classList.remove('show')); if(cdTimer){clearTimeout(cdTimer);cdTimer=null;} }
   function step() {
     if (!cdActive) { cleanup(); return; }
@@ -2258,17 +2257,17 @@ function toggleTuner() {
   if (panel) panel.style.display=tunerActive?'block':'none';
   if (tunerActive) startTuner(); else stopTuner();
 }
-async function startTuner() {
+function startTuner() {
   if ($('tuner-status')) $('tuner-status').textContent='Demande accès micro...';
-  try {
-    tunerStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+  navigator.mediaDevices.getUserMedia({audio:true,video:false}).then(function(stream){
+    tunerStream=stream;
     tunerContext=new (window.AudioContext||window.webkitAudioContext)();
-    const source=tunerContext.createMediaStreamSource(tunerStream);
+    var source=tunerContext.createMediaStreamSource(tunerStream);
     tunerAnalyser=tunerContext.createAnalyser(); tunerAnalyser.fftSize=2048;
     source.connect(tunerAnalyser);
-    if ($('tuner-status')) $('tuner-status').textContent='🎤 Micro actif — joue une corde';
+    if ($('tuner-status')) $('tuner-status').textContent='Micro actif — joue une corde';
     tunerLoop();
-  } catch(e) { if($('tuner-status'))$('tuner-status').textContent='❌ Micro refusé : '+e.message; }
+  }).catch(function(e){if($('tuner-status'))$('tuner-status').textContent='Micro refusé : '+e.message;});
 }
 function stopTuner() {
   if (tunerAnimFrame) cancelAnimationFrame(tunerAnimFrame);
@@ -2389,15 +2388,6 @@ function toggleYTPanel() {
   const visible = p.style.display !== 'none';
   p.style.display = visible ? 'none' : 'block';
 }
-function ytSnapOffset() {
-  const ms = typeof currentPlaybackMs === 'number' ? currentPlaybackMs : 0;
-  const sec = Math.max(0, Math.round(ms / 1000));
-  const input = $('ytOffsetInput');
-  if (input) input.value = String(sec);
-  if (typeof updateYTExtLink === 'function') updateYTExtLink(sec);
-  if ($('ytStatus')) $('ytStatus').textContent = 'Offset calé sur ' + sec + 's (GP)';
-  log('ytSnapOffset → ' + sec + 's');
-}
 
 
 /* ══ TOP BARS TOGGLE ══ */
@@ -2438,19 +2428,19 @@ function toggleSidebar() {
 (function() {
   const CACHE_KEY = 'sf2PresetId';
 
-  async function loadSF2FromUrl(url, label) {
-    const status = document.getElementById('sf2PresetStatus');
-    const sfTag  = document.getElementById('sfTag');
-    const sfLab  = document.getElementById('sfBtnLabel');
-    if (status) { status.textContent = '⏳ chargement…'; status.className = 'loading'; }
-    try {
-      const res = await fetch(url);
+  function loadSF2FromUrl(url, label) {
+    var status = document.getElementById('sf2PresetStatus');
+    var sfTag  = document.getElementById('sfTag');
+    var sfLab  = document.getElementById('sfBtnLabel');
+    if (status) { status.textContent = 'chargement…'; status.className = 'loading'; }
+    fetch(url).then(function(res){
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const buf = await res.arrayBuffer();
+      return res.arrayBuffer();
+    }).then(function(buf){
       customSFBuffer = buf;
-      if (sfTag) { sfTag.textContent = 'SF ✓'; sfTag.className = 'sf-tag ok'; }
-      if (sfLab) sfLab.textContent = label.replace(/^[^ ]+ /, ''); // sans l'emoji
-      if (status) { status.textContent = '✓ chargé'; status.className = 'ok'; setTimeout(()=>{ if(status) status.textContent=''; }, 3000); }
+      if (sfTag) { sfTag.textContent = 'SF OK'; sfTag.className = 'sf-tag ok'; }
+      if (sfLab) sfLab.textContent = label.replace(/^[^ ]+ /, '');
+      if (status) { status.textContent = 'chargé'; status.className = 'ok'; setTimeout(function(){ if(status) status.textContent=''; }, 3000); }
       if (AT) {
         try { AT.loadSoundFont(buf); log('SF2 préset chargé:', label); }
         catch(e) { log('loadSoundFont err:', e.message); }
@@ -2458,10 +2448,10 @@ function toggleSidebar() {
         log('SF2 préset mis en buffer, sera appliqué au prochain init');
       }
       localStorage.setItem(CACHE_KEY, (function(){var _e=document.getElementById('sf2PresetSelect');return _e?_e.value:'';})() || '');
-    } catch(e) {
-      if (status) { status.textContent = '✗ erreur'; status.className = 'err'; }
+    }).catch(function(e){
+      if (status) { status.textContent = 'erreur'; status.className = 'err'; }
       log('SF2 préset load erreur:', e.message);
-    }
+    });
   }
 
   function onPresetChange() {
