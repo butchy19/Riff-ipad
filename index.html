@@ -1584,7 +1584,7 @@ function initAlphaTab() {
     if (Array.isArray(beat.notes)) {
       beat.notes.forEach(n => { if (typeof n.string==='number' && typeof n.fret==='number') notes.push({stringIndex:n.string, fret:n.fret}); });
     }
-    if (!notes.length && (beat.noteStringLookup?beat.noteStringLookup.forEach:null)) {
+    if (!notes.length && beat.noteStringLookup && beat.noteStringLookup.forEach) {
       beat.noteStringLookup.forEach(n => { if (typeof n.string==='number' && typeof n.fret==='number') notes.push({stringIndex:n.string, fret:n.fret}); });
     }
     lastFretboardNotes = notes;
