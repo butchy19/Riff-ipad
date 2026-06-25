@@ -1575,7 +1575,7 @@ function initAlphaTab() {
     isPlaying = playing; syncPlayIcon();
   });
 
-  (AT.playedBeatChanged&&AT.playedBeatChanged.on(function(beat){
+  if(AT.playedBeatChanged) AT.playedBeatChanged.on(function(beat){
     beatCount++;
     const chord = (beat&&beat.chord?beat.chord.name:null) || (beat&&beat.graceBeats&&beat.graceBeats[0]&&beat.graceBeats[0].chord?beat.graceBeats[0].chord.name:null) || null;
     if (chord !== undefined) activeChordName = chord || null;
@@ -1629,7 +1629,7 @@ setTimeout(() => { isLoopJumping=false; }, 200);
       if (pct>=100) { const t=$('sfTag'); if (t) { t.textContent='SF ✓'; t.className='sf-tag ok'; } }
     });
   }
-  (AT.error&&AT.error.on(function(e){log('AT.error:',(e?e.message:null)||JSON.stringify(e));}));
+  if(AT.error) AT.error.on(function(e){log('AT.error:',(e?e.message:null)||JSON.stringify(e));});
   log('Events bindés. En attente de fichier...');
 }
 
